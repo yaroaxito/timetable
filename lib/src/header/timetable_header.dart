@@ -59,7 +59,7 @@ class TimetableHeader<E extends Event> extends StatelessWidget {
               children: <Widget>[
                 SizedBox(
                   height:
-                      MediaQuery.of(context).size * 0.11 ?? 72,
+                      context.timetableTheme?.totalDateIndicatorHeight ?? 72,
                   child: MultiDateHeader(
                     controller: controller,
                     builder: dateHeaderBuilder,
