@@ -1,202 +1,306 @@
 import 'package:flutter/material.dart';
+import 'package:meta/meta.dart';
+import 'package:time_machine/time_machine.dart';
+import 'package:time_machine/time_machine_text_patterns.dart';
 
-import 'components/date_dividers.dart';
-import 'components/date_events.dart';
-import 'components/date_header.dart';
-import 'components/date_indicator.dart';
-import 'components/hour_dividers.dart';
-import 'components/month_indicator.dart';
-import 'components/month_widget.dart';
-import 'components/multi_date_event_header.dart';
-import 'components/now_indicator.dart';
-import 'components/time_indicator.dart';
-import 'components/week_indicator.dart';
-import 'components/weekday_indicator.dart';
-import 'utils.dart';
-import 'week.dart';
+import 'timetable.dart';
 
-typedef MonthBasedStyleProvider<T> = T Function(DateTime month);
-typedef WeekBasedStyleProvider<T> = T Function(Week week);
-typedef DateBasedStyleProvider<T> = T Function(DateTime date);
-typedef TimeBasedStyleProvider<T> = T Function(Duration time);
-
-/// Bundles styles for all Timetable widgets.
-///
-/// See also:
-///
-/// * [TimetableTheme], which makes the theme data available to nested widgets.
-@immutable
+/// Defines visual properties for [Timetable] and related widgets.
 class TimetableThemeData {
-  factory TimetableThemeData(
-    BuildContext context, {
-    int? startOfWeek,
-    DateDividersStyle? dateDividersStyle,
-    DateBasedStyleProvider<DateEventsStyle>? dateEventsStyleProvider,
-    DateBasedStyleProvider<DateHeaderStyle>? dateHeaderStyleProvider,
-    DateBasedStyleProvider<DateIndicatorStyle>? dateIndicatorStyleProvider,
-    HourDividersStyle? hourDividersStyle,
-    MonthBasedStyleProvider<MonthIndicatorStyle>? monthIndicatorStyleProvider,
-    MonthBasedStyleProvider<MonthWidgetStyle>? monthWidgetStyleProvider,
-    MultiDateEventHeaderStyle? multiDateEventHeaderStyle,
-    NowIndicatorStyle? nowIndicatorStyle,
-    TimeBasedStyleProvider<TimeIndicatorStyle>? timeIndicatorStyleProvider,
-    DateBasedStyleProvider<WeekdayIndicatorStyle>?
-        weekdayIndicatorStyleProvider,
-    WeekBasedStyleProvider<WeekIndicatorStyle>? weekIndicatorStyleProvider,
-  }) {
-    return TimetableThemeData.raw(
-      startOfWeek: startOfWeek ?? DateTime.monday,
-      dateDividersStyle: dateDividersStyle ?? DateDividersStyle(context),
-      dateEventsStyleProvider:
-          dateEventsStyleProvider ?? (date) => DateEventsStyle(context, date),
-      dateHeaderStyleProvider:
-          dateHeaderStyleProvider ?? (date) => DateHeaderStyle(context, date),
-      dateIndicatorStyleProvider: dateIndicatorStyleProvider ??
-          (date) => DateIndicatorStyle(context, date),
-      hourDividersStyle: hourDividersStyle ?? HourDividersStyle(context),
-      monthIndicatorStyleProvider: monthIndicatorStyleProvider ??
-          (month) => MonthIndicatorStyle(context, month),
-      monthWidgetStyleProvider: monthWidgetStyleProvider ??
-          (month) => MonthWidgetStyle(context, month, startOfWeek: startOfWeek),
-      multiDateEventHeaderStyle:
-          multiDateEventHeaderStyle ?? MultiDateEventHeaderStyle(context),
-      nowIndicatorStyle: nowIndicatorStyle ?? NowIndicatorStyle(context),
-      timeIndicatorStyleProvider: timeIndicatorStyleProvider ??
-          (time) => TimeIndicatorStyle(context, time),
-      weekdayIndicatorStyleProvider: weekdayIndicatorStyleProvider ??
-          (date) => WeekdayIndicatorStyle(context, date),
-      weekIndicatorStyleProvider: weekIndicatorStyleProvider ??
-          (week) => WeekIndicatorStyle(context, week),
-    );
-  }
+  const TimetableThemeData({
+    this.primaryColor,
+    this.weekIndicatorDecoration,
+    this.weekIndicatorTextStyle,
+    this.totalDateIndicatorHeight,
+    this.weekDayIndicatorPattern,
+    this.weekDayIndicatorDecoration,
+    this.weekDayIndicatorTextStyle,
+    this.dateIndicatorPattern,
+    this.dateIndicatorDecoration,
+    this.dateIndicatorTextStyle,
+    this.allDayEventHeight,
+    this.hourTextStyle,
+    this.timeIndicatorColor,
+    this.dividerColor,
+    this.minimumHourHeight,
+    this.maximumHourHeight,
+    this.minimumHourZoom,
+    this.maximumHourZoom,
+    this.partDayEventMinimumDuration,
+    this.partDayEventMinimumHeight,
+    this.partDayEventSpacing,
+    this.enablePartDayEventStacking,
+    this.partDayEventMinimumDeltaForStacking,
+    this.partDayStackedEventSpacing,
+  })  : assert(allDayEventHeight == null || allDayEventHeight > 0),
+        assert(minimumHourHeight == null || minimumHourHeight > 0),
+        assert(maximumHourHeight == null || maximumHourHeight > 0),
+        assert(minimumHourHeight == null ||
+            maximumHourHeight == null ||
+            minimumHourHeight <= maximumHourHeight),
+        assert(minimumHourZoom == null || minimumHourZoom > 0),
+        assert(maximumHourZoom == null || maximumHourZoom > 0),
+        assert(minimumHourZoom == null ||
+            minimumHourZoom == null ||
+            minimumHourZoom <= minimumHourZoom);
 
-  TimetableThemeData.raw({
-    required this.startOfWeek,
-    required this.dateDividersStyle,
-    required this.dateEventsStyleProvider,
-    required this.dateHeaderStyleProvider,
-    required this.dateIndicatorStyleProvider,
-    required this.hourDividersStyle,
-    required this.monthIndicatorStyleProvider,
-    required this.monthWidgetStyleProvider,
-    required this.multiDateEventHeaderStyle,
-    required this.nowIndicatorStyle,
-    required this.timeIndicatorStyleProvider,
-    required this.weekdayIndicatorStyleProvider,
-    required this.weekIndicatorStyleProvider,
-  }) : assert(startOfWeek.isValidTimetableDayOfWeek);
+  /// Used by default for indicating the current date.
+  ///
+  /// The default value is [ThemeData.primaryColor].
+  final Color primaryColor;
 
-  final int startOfWeek;
-  final DateDividersStyle dateDividersStyle;
-  final DateBasedStyleProvider<DateEventsStyle> dateEventsStyleProvider;
-  final DateBasedStyleProvider<DateHeaderStyle> dateHeaderStyleProvider;
-  final DateBasedStyleProvider<DateIndicatorStyle> dateIndicatorStyleProvider;
-  final HourDividersStyle hourDividersStyle;
-  final MonthBasedStyleProvider<MonthIndicatorStyle>
-      monthIndicatorStyleProvider;
-  final MonthBasedStyleProvider<MonthWidgetStyle> monthWidgetStyleProvider;
-  final MultiDateEventHeaderStyle multiDateEventHeaderStyle;
-  final NowIndicatorStyle nowIndicatorStyle;
-  final TimeBasedStyleProvider<TimeIndicatorStyle> timeIndicatorStyleProvider;
-  final DateBasedStyleProvider<WeekdayIndicatorStyle>
-      weekdayIndicatorStyleProvider;
-  final WeekBasedStyleProvider<WeekIndicatorStyle> weekIndicatorStyleProvider;
+  // Header:
 
-  TimetableThemeData copyWith({
-    int? startOfWeek,
-    DateDividersStyle? dateDividersStyle,
-    DateBasedStyleProvider<DateEventsStyle>? dateEventsStyleProvider,
-    DateBasedStyleProvider<DateHeaderStyle>? dateHeaderStyleProvider,
-    DateBasedStyleProvider<DateIndicatorStyle>? dateIndicatorStyleProvider,
-    HourDividersStyle? hourDividersStyle,
-    MonthBasedStyleProvider<MonthIndicatorStyle>? monthIndicatorStyleProvider,
-    MonthBasedStyleProvider<MonthWidgetStyle>? monthWidgetStyleProvider,
-    MultiDateEventHeaderStyle? multiDateEventHeaderStyle,
-    NowIndicatorStyle? nowIndicatorStyle,
-    TimeBasedStyleProvider<TimeIndicatorStyle>? timeIndicatorStyleProvider,
-    DateBasedStyleProvider<WeekdayIndicatorStyle>?
-        weekdayIndicatorStyleProvider,
-    WeekBasedStyleProvider<WeekIndicatorStyle>? weekIndicatorStyleProvider,
-  }) {
-    return TimetableThemeData.raw(
-      startOfWeek: startOfWeek ?? this.startOfWeek,
-      dateDividersStyle: dateDividersStyle ?? this.dateDividersStyle,
-      dateEventsStyleProvider:
-          dateEventsStyleProvider ?? this.dateEventsStyleProvider,
-      dateHeaderStyleProvider:
-          dateHeaderStyleProvider ?? this.dateHeaderStyleProvider,
-      dateIndicatorStyleProvider:
-          dateIndicatorStyleProvider ?? this.dateIndicatorStyleProvider,
-      hourDividersStyle: hourDividersStyle ?? this.hourDividersStyle,
-      monthIndicatorStyleProvider:
-          monthIndicatorStyleProvider ?? this.monthIndicatorStyleProvider,
-      monthWidgetStyleProvider:
-          monthWidgetStyleProvider ?? this.monthWidgetStyleProvider,
-      multiDateEventHeaderStyle:
-          multiDateEventHeaderStyle ?? this.multiDateEventHeaderStyle,
-      nowIndicatorStyle: nowIndicatorStyle ?? this.nowIndicatorStyle,
-      timeIndicatorStyleProvider:
-          timeIndicatorStyleProvider ?? this.timeIndicatorStyleProvider,
-      weekdayIndicatorStyleProvider:
-          weekdayIndicatorStyleProvider ?? this.weekdayIndicatorStyleProvider,
-      weekIndicatorStyleProvider:
-          weekIndicatorStyleProvider ?? this.weekIndicatorStyleProvider,
-    );
-  }
+  /// [Decoration] to show around the week indicator.
+  final Decoration weekIndicatorDecoration;
+
+  /// [TextStyle] used to display the current week number.
+  final TextStyle weekIndicatorTextStyle;
+
+  /// Total (combined) height of both the day-of-week- and
+  /// date-of-month-indicators.
+  ///
+  /// > **Note:** This will soon be determined automatically based on the actual
+  /// > height.
+  @experimental
+  final double totalDateIndicatorHeight;
+
+  /// [LocalDatePattern] for formatting the day-of-week.
+  ///
+  /// See also:
+  /// - [dateIndicatorTextStyle] for a list of possible states.
+  final MaterialStateProperty<LocalDatePattern> weekDayIndicatorPattern;
+
+  /// [Decoration] to show around the day-of-week-indicator.
+  ///
+  /// See also:
+  /// - [dateIndicatorTextStyle] for a list of possible states.
+  final MaterialStateProperty<Decoration> weekDayIndicatorDecoration;
+
+  /// [TextStyle] used to display the day of week.
+  ///
+  /// See also:
+  /// - [dateIndicatorTextStyle] for a list of possible states.
+  final MaterialStateProperty<TextStyle> weekDayIndicatorTextStyle;
+
+  /// [LocalDatePattern] for formatting the date (of month).
+  ///
+  /// See also:
+  /// - [dateIndicatorTextStyle] for a list of possible states.
+  final MaterialStateProperty<LocalDatePattern> dateIndicatorPattern;
+
+  /// [Decoration] to show around the date (of month) indicator.
+  ///
+  /// See also:
+  /// - [dateIndicatorTextStyle] for a list of possible states.
+  final MaterialStateProperty<Decoration> dateIndicatorDecoration;
+
+  /// [TextStyle] used to display the date (of month).
+  ///
+  /// States:
+  /// - past days: [MaterialState.disabled]
+  /// - today: [MaterialState.selected]
+  /// - future days: none
+  final MaterialStateProperty<TextStyle> dateIndicatorTextStyle;
+
+  /// Height of a single all-day event.
+  ///
+  /// Defaults to 24.
+  final double allDayEventHeight;
+
+  // Content:
+
+  /// [TextStyle] used to display the hours of the day.
+  final TextStyle hourTextStyle;
+
+  /// [Color] for painting the current time indicator.
+  final Color timeIndicatorColor;
+
+  /// [Color] for painting hour and day dividers in the part-day event area.
+  final Color dividerColor;
+
+  /// Minimum height of a single hour when zooming in.
+  ///
+  /// Defaults to 16.
+  final double minimumHourHeight;
+
+  /// Maximum height of a single hour when zooming in.
+  ///
+  /// [double.infinity] is supported!
+  ///
+  /// Defaults to 64.
+  final double maximumHourHeight;
+
+  /// Minimum time zoom factor.
+  ///
+  /// `1` means that the hours content is exactly as high as the parent. Larger
+  /// values mean zooming in, and smaller values mean zooming out.
+  ///
+  /// If both hour height limits ([minimumHourHeight] or [maximumHourHeight])
+  /// and hour zoom limits (this property or [maximumHourZoom]) are set, zoom
+  /// limits take precedence.
+  ///
+  /// Defaults to 0.
+  final double minimumHourZoom;
+
+  /// Maximum time zoom factor.
+  ///
+  /// Defaults to [double.infinity].
+  ///
+  /// See also:
+  /// - [minimumHourZoom] for an explanation of zoom values.
+  final double maximumHourZoom;
+
+  /// Minimum [Period] to size a part-day event.
+  ///
+  /// Can be used together with [partDayEventMinimumHeight].
+  final Period partDayEventMinimumDuration;
+
+  /// Minimum height to size a part-day event.
+  ///
+  /// Can be used together with [partDayEventMinimumDuration].
+  final double partDayEventMinimumHeight;
+
+  /// Horizontal space between two parallel events shown next to each other.
+  final double partDayEventSpacing;
+
+  /// Controls whether overlapping events may be stacked on top of each other.
+  ///
+  /// If set to `true`, intersecting events may be stacked if their start values
+  /// differ by at least [partDayEventMinimumDeltaForStacking]. If set to
+  /// `false`, intersecting events will always be shown next to each other and
+  /// not overlap.
+  ///
+  /// Defaults to `true`.
+  final bool enablePartDayEventStacking;
+
+  /// When the start values of two events differ by at least this value, they
+  /// may be stacked on top of each other.
+  ///
+  /// If the difference is less, they will be shown next to each other.
+  ///
+  /// Defaults to 15 min.
+  ///
+  /// See also:
+  /// - [enablePartDayEventStacking], which can disable the stacking behavior
+  ///   completely.
+  final Period partDayEventMinimumDeltaForStacking;
+
+  /// Horizontal space between two parallel events stacked on top of each other.
+  final double partDayStackedEventSpacing;
 
   @override
-  int get hashCode => hashValues(
-        startOfWeek,
-        dateDividersStyle,
-        dateEventsStyleProvider,
-        dateHeaderStyleProvider,
-        dateIndicatorStyleProvider,
-        hourDividersStyle,
-        monthIndicatorStyleProvider,
-        monthWidgetStyleProvider,
-        multiDateEventHeaderStyle,
-        nowIndicatorStyle,
-        timeIndicatorStyleProvider,
-        weekdayIndicatorStyleProvider,
-        weekIndicatorStyleProvider,
-      );
+  int get hashCode {
+    return hashList([
+      primaryColor,
+      weekIndicatorDecoration,
+      weekIndicatorTextStyle,
+      totalDateIndicatorHeight,
+      weekDayIndicatorPattern,
+      weekDayIndicatorDecoration,
+      weekDayIndicatorTextStyle,
+      dateIndicatorPattern,
+      dateIndicatorDecoration,
+      dateIndicatorTextStyle,
+      allDayEventHeight,
+      hourTextStyle,
+      timeIndicatorColor,
+      dividerColor,
+      minimumHourHeight,
+      maximumHourHeight,
+      minimumHourZoom,
+      maximumHourZoom,
+      partDayEventMinimumDuration,
+      partDayEventMinimumHeight,
+      partDayEventSpacing,
+      enablePartDayEventStacking,
+      partDayEventMinimumDeltaForStacking,
+      partDayStackedEventSpacing,
+    ]);
+  }
+
   @override
   bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
     return other is TimetableThemeData &&
-        startOfWeek == other.startOfWeek &&
-        dateDividersStyle == other.dateDividersStyle &&
-        dateEventsStyleProvider == other.dateEventsStyleProvider &&
-        dateHeaderStyleProvider == other.dateHeaderStyleProvider &&
-        dateIndicatorStyleProvider == other.dateIndicatorStyleProvider &&
-        hourDividersStyle == other.hourDividersStyle &&
-        monthIndicatorStyleProvider == other.monthIndicatorStyleProvider &&
-        monthWidgetStyleProvider == other.monthWidgetStyleProvider &&
-        multiDateEventHeaderStyle == other.multiDateEventHeaderStyle &&
-        nowIndicatorStyle == other.nowIndicatorStyle &&
-        timeIndicatorStyleProvider == other.timeIndicatorStyleProvider &&
-        weekdayIndicatorStyleProvider == other.weekdayIndicatorStyleProvider &&
-        weekIndicatorStyleProvider == other.weekIndicatorStyleProvider;
+        other.primaryColor == primaryColor &&
+        other.weekIndicatorDecoration == weekIndicatorDecoration &&
+        other.weekIndicatorTextStyle == weekIndicatorTextStyle &&
+        other.totalDateIndicatorHeight == totalDateIndicatorHeight &&
+        other.weekDayIndicatorPattern == weekDayIndicatorPattern &&
+        other.weekDayIndicatorDecoration == weekDayIndicatorDecoration &&
+        other.weekDayIndicatorTextStyle == weekDayIndicatorTextStyle &&
+        other.dateIndicatorPattern == dateIndicatorPattern &&
+        other.dateIndicatorDecoration == dateIndicatorDecoration &&
+        other.dateIndicatorTextStyle == dateIndicatorTextStyle &&
+        other.allDayEventHeight == allDayEventHeight &&
+        other.hourTextStyle == hourTextStyle &&
+        other.timeIndicatorColor == timeIndicatorColor &&
+        other.dividerColor == dividerColor &&
+        other.minimumHourHeight == minimumHourHeight &&
+        other.maximumHourHeight == maximumHourHeight &&
+        other.minimumHourZoom == minimumHourZoom &&
+        other.maximumHourZoom == maximumHourZoom &&
+        other.partDayEventMinimumDuration == partDayEventMinimumDuration &&
+        other.partDayEventMinimumHeight == partDayEventMinimumHeight &&
+        other.partDayEventSpacing == partDayEventSpacing &&
+        other.enablePartDayEventStacking == enablePartDayEventStacking &&
+        other.partDayEventMinimumDeltaForStacking ==
+            partDayEventMinimumDeltaForStacking &&
+        other.partDayStackedEventSpacing == partDayStackedEventSpacing;
   }
 }
 
-/// Provides styles for nested Timetable widgets.
-///
-/// See also:
-///
-/// * [TimetableThemeData], which bundles the actual styles.
-class TimetableTheme extends InheritedWidget {
+/// An inherited widget that defines visual properties for [Timetable]s and
+/// related widgets in this widget's subtree.
+class TimetableTheme extends InheritedTheme {
+  /// Creates a timetable theme that controls the [TimetableThemeData]
+  /// properties for a [Timetable].
+  ///
+  /// [data] must not be null.
   const TimetableTheme({
-    required this.data,
-    required Widget child,
-  }) : super(child: child);
+    Key key,
+    @required this.data,
+    @required Widget child,
+  })  : assert(data != null),
+        super(key: key, child: child);
 
   final TimetableThemeData data;
 
+  /// The closest instance of this class that encloses the given context.
+  ///
+  /// If there is no enclosing [TimetableTheme] widget, `null` is returned.
+  ///
+  /// It's recommended to use the extension property on [BuildContext]:
+  ///
+  /// ```dart
+  /// TimetableThemeData theme = context.timetableTheme;
+  /// ```
+  static TimetableThemeData of(BuildContext context) {
+    final timetableTheme =
+        context.dependOnInheritedWidgetOfExactType<TimetableTheme>();
+    return timetableTheme?.data;
+  }
+
+  @override
+  Widget wrap(BuildContext context, Widget child) {
+    final ancestorTheme =
+        context.findAncestorWidgetOfExactType<TimetableTheme>();
+    return identical(this, ancestorTheme)
+        ? child
+        : TimetableTheme(data: data, child: child);
+  }
+
   @override
   bool updateShouldNotify(TimetableTheme oldWidget) => data != oldWidget.data;
+}
 
-  static TimetableThemeData? of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<TimetableTheme>()?.data;
-  static TimetableThemeData orDefaultOf(BuildContext context) =>
-      of(context) ?? TimetableThemeData(context);
+extension TimetableThemeBuildContext on BuildContext {
+  /// Shortcut for `TimetableTheme.of(context)`.
+  TimetableThemeData get timetableTheme => TimetableTheme.of(this);
 }
